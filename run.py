@@ -1,47 +1,39 @@
 import vision
 
-# from ultralytics.utils import plotting
+from PIL import Image, ImageDraw, ImageFont
+import numpy as np
+import cv2
 
 
 def go():
     segmenter = "yolo"
-    name = "coffee-shop"
-    img = f"./sample/{name}.jpg"
+    name = "couple"
+    ext = "jpg"
+    img = f"./sample/{name}.{ext}"
     prompt = None
     operation = "crop"
 
-    # results, model = vision.do_segment(img, segmenter=segmenter, prompt=prompt)
+    results, model = vision.do_segment(img, segmenter=segmenter, prompt=prompt)
 
+    # masked output
+    # output_img_filename = f"./output/{name}-mask-{segmenter}.{ext}"
+    # results[0].plot(labels=False, boxes=False, save=True, filename=output_img_filename)
+    # print(f"image saved: {output_img_filename}")
+
+    # for COS
     # results[0].save_crop(
-    #     save_dir="./output/crops", file_name=f"{name}-mask-{segmenter}"
-    # )
-    # image_filename = f"./output/{name}-mask-{segmenter}.jpg"
-    # results[0].save(filename=image_filename)
-    # results[0].plot(labels=False, boxes=False, save=True, filename=image_filename)
-    # print(f"image saved: {image_filename}")
-    # print(results[0].boxes.xyxy)
-
-    caption = vision.write_caption(img)
-    print(caption)
-
-    # sv workflow
-    # detections = sv.Detections.from_ultralytics(results[0])
-
-    # image = cv2.imread(img)
-    # mask_annotator = sv.MaskAnnotator(color_lookup=sv.ColorLookup.INDEX)
-    # label_annotator = sv.LabelAnnotator()
-
-    # labels = [model.model.names[class_id] for class_id in detections.class_id]
-
-    # annotated_image = mask_annotator.annotate(scene=image, detections=detections)
-    # annotated_image = label_annotator.annotate(
-    #     scene=annotated_image, detections=detections, labels=labels
+    #     save_dir="./output/crops", file_name=f"{name}-crop-{segmenter}"
     # )
 
-    # with sv.ImageSink(target_dir_path="./output", overwrite=True) as sink:
-    #     image_filename = f"{name}-mask-{segmenter}.jpg"
-    #     sink.save_image(image=annotated_image, image_name=image_filename)
-    #     print(f"image saved: {image_filename}")
+    # set SOM
+    som = vision.set_marks(img, results, font_size=50)
+    output_img_filename = f"./output/{name}-mask-{segmenter}.{ext}"
+    som.save(output_img_filename)
+    print(f"image saved: {output_img_filename}")
+
+    # captioning
+    # caption = vision.write_caption(img)
+    # print(caption)
 
 
 if __name__ == "__main__":
