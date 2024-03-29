@@ -11,13 +11,17 @@ def go():
     ext = "jpg"
     img = f"./sample/{name}.{ext}"
     prompt = None
-    operation = "crop"
+    output_img_filename = f"./output/{name}-{segmenter}"
 
     results, model = vision.do_segment(img, segmenter=segmenter, prompt=prompt)
 
     # masked output
-    # output_img_filename = f"./output/{name}-mask-{segmenter}.{ext}"
-    # results[0].plot(labels=False, boxes=False, save=True, filename=output_img_filename)
+    # results[0].plot(
+    #     labels=False,
+    #     boxes=False,
+    #     save=True,
+    #     filename=f"{output_img_filename}-mask.{ext}",
+    # )
     # print(f"image saved: {output_img_filename}")
 
     # for COS
@@ -27,8 +31,7 @@ def go():
 
     # set SOM
     som = vision.set_marks(img, results, font_size=50)
-    output_img_filename = f"./output/{name}-mask-{segmenter}.{ext}"
-    som.save(output_img_filename)
+    som.save(f"{output_img_filename}-som.{ext}")
     print(f"image saved: {output_img_filename}")
 
     # captioning
