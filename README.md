@@ -1,4 +1,4 @@
-# som-blip-cos
+# retina
 
 Demonstration of combining the concepts of Set-of-Mark (SoM) Prompting, Chain-of-Spot (CoS) approach, with BLIP captions for better visual question answering.
 
