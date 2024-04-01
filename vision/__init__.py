@@ -132,10 +132,9 @@ class Retina:
                 x, y = center
 
                 # rescale center point coordinates to image size
-                mask_image = Image.fromarray(mask_arr)
                 scaled_center = self._rescale_coordinates(
-                    mask_image.width,
-                    mask_image.height,
+                    width,
+                    height,
                     raw_image.width,
                     raw_image.height,
                     x,
@@ -170,7 +169,7 @@ class Retina:
 
 class Chat:
     def __init__(self) -> None:
-        """Conversation with OpenAI GPT-4V"""
+        """Conversation with OpenAI GPT-4V or any VLM with OpenAI-compatible API"""
         self.model = "gpt-4-vision-preview"
 
     def write_context(self, image_path: str, caption: str):
