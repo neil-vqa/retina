@@ -7,7 +7,7 @@ output_dir.mkdir(parents=True, exist_ok=True)
 
 def go():
     segmenter = "yolo"
-    name = "couple"
+    name = "keiko-fat"
     ext = "jpg"
     img = f"./sample/{name}.{ext}"
     prompt = None

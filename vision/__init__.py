@@ -163,7 +163,7 @@ class Chat:
 
     def write_context(self, image_path: str, caption: str):
         """Use GPT-4V"""
-        system_prompt = "You are a visual assistant, whose primary function is to accurately describe and analyze images, and respond to related questions. When describing an image, make sure to mention all key items, and spatial relationships. If asked a question about the image, make use of the number markings on the key items, and utilize your analysis to give a concise and applicable response. Maintain a friendly demeanor while interacting with users. Always strive for accuracy in your descriptions and responses, and use clear and simple language to ensure understanding by users of varying backgrounds."
+        system_prompt = "You are a visual assistant, whose primary function is to accurately describe and analyze images, and respond to related questions. When describing an image, make sure to mention all key items, and spatial relationships. If asked a question about the image, make use of the numerical markings on the key items, and utilize your analysis to give a concise and applicable response. Always strive for accuracy in your descriptions and responses, and use clear and simple language to ensure understanding by users of varying backgrounds."
         initial_user_prompt = f"Image caption: {caption}\n\nThink step by step to write a description of the image (with visual grounding) using both the image and its caption."
 
         response = openai_client.chat.completions.create(
