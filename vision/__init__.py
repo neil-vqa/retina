@@ -109,8 +109,8 @@ class Retina:
         draw = ImageDraw.Draw(raw_image)
         font = ImageFont.load_default(size=font_size)
 
-        for item in detections:
-            masks = item.masks.data
+        for current_image_detection in detections:
+            masks = current_image_detection.masks.data
             for i, mask in enumerate(masks):
                 mask_arr = mask.detach().cpu().numpy() * 255
                 src_mask = (mask_arr).astype("uint8")

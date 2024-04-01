@@ -7,19 +7,19 @@ output_dir.mkdir(parents=True, exist_ok=True)
 
 def go():
     segmenter = "yolo"
-    name = "keiko-fat"
+    name = "corgi-run"
     ext = "jpg"
     img = f"./sample/{name}.{ext}"
     prompt = None
     output_img_filename = f"./output/{name}-{segmenter}"
 
     retina = vision.Retina(img)
-    # som = retina.generate_som_image()
-    # som.save(f"{output_img_filename}-som.{ext}")
-    # print(f"image saved: {output_img_filename}")
+    som = retina.generate_som_image()
+    som.save(f"{output_img_filename}-som.{ext}")
+    print(f"image saved: {output_img_filename}")
 
-    caption = retina.write_caption()
-    print(caption)
+    # caption = retina.write_caption()
+    # print(caption)
 
     # masked output
     # results[0].plot(
