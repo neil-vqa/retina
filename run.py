@@ -7,13 +7,13 @@ output_dir.mkdir(parents=True, exist_ok=True)
 
 def go():
     segmenter = "yolo"
-    name = "corgi-run"
+    name = "couple"
     ext = "jpg"
     img = f"./sample/{name}.{ext}"
     prompt = None
     output_img_filename = f"./output/{name}-{segmenter}"
 
-    retina = vision.Retina(img)
+    retina = vision.Retina(img, segmenter)
     som = retina.generate_som_image()
     som.save(f"{output_img_filename}-som.{ext}")
     print(f"image saved: {output_img_filename}")

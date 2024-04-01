@@ -18,28 +18,23 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 yolo_segmenter_model = YOLO("yolov8x-seg.pt")
 sam_segmenter_model = SAM("mobile_sam.pt")
-yoloworld_segmenter_model = YOLO("yolov8x-worldv2.pt")
 
 
 class Retina:
-    def __init__(
-        self, src_image: Path, segmenter: str = "yolo", prompt: str = None
-    ) -> None:
+    def __init__(self, src_image: Path, segmenter: str = "yolo") -> None:
         self.src_image = src_image
         self.segmenter = segmenter
-        self.prompt = prompt
 
     def generate_som_image(self):
         """Returns a PIL Image."""
 
-        results, _ = self.do_segment(segmenter=self.segmenter, prompt=self.prompt)
+        results, _ = self.do_segment(segmenter=self.segmenter)
         som = self.set_marks(results, font_size=50)
         return som
 
     def do_segment(
         self,
-        segmenter: Literal["yolo", "sam", "yoloworld"] = "yolo",
-        prompt: str = None,
+        segmenter: Literal["yolo", "sam"] = "yolo",
     ):
         print("processsing image...")
         if segmenter == "yolo":
@@ -47,15 +42,9 @@ class Retina:
             return results, yolo_segmenter_model
         elif segmenter == "sam":
             results: list[Results] = sam_segmenter_model.predict(
-                self.src_image, max_det=15
+                self.src_image, max_det=9
             )
             return results, sam_segmenter_model
-        elif segmenter == "yoloworld":
-            # object detection only; does not perform segmentation
-            if prompt:
-                yoloworld_segmenter_model.set_classes([prompt])
-            results = yoloworld_segmenter_model.predict(self.src_image)
-            return results, yoloworld_segmenter_model
 
     def _rescale_coordinates(
         self, original_width, original_height, new_width, new_height, x, y
@@ -106,7 +95,7 @@ class Retina:
     def set_marks(self, detections: list[Results], font_size: int = 20):
         print("setting marks...")
         raw_image = Image.open(self.src_image)
-        draw = ImageDraw.Draw(raw_image)
+        raw_image_draw = ImageDraw.Draw(raw_image)
         font = ImageFont.load_default(size=font_size)
 
         for current_image_detection in detections:
@@ -128,8 +117,6 @@ class Retina:
                 center_y = coords_y[len(coords_y) // 2] - 6
                 center_x = max(0, min(center_x, width - 1))
                 center_y = max(0, min(center_y, height - 1))
-                center = (center_x, center_y)
-                x, y = center
 
                 # rescale center point coordinates to image size
                 scaled_center = self._rescale_coordinates(
@@ -137,13 +124,15 @@ class Retina:
                     height,
                     raw_image.width,
                     raw_image.height,
-                    x,
-                    y,
+                    center_x,
+                    center_y,
                 )
 
                 # add numerical label
                 text = str(i + 1)
-                text_width, text_height = draw.textbbox((0, 0), text, font=font)[2:]
+                text_width, text_height = raw_image_draw.textbbox(
+                    (0, 0), text, font=font
+                )[2:]
                 text_background = Image.new(
                     "RGB", (text_width + 2, text_height + 2), "black"
                 )
