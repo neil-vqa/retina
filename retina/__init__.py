@@ -21,12 +21,14 @@ sam_segmenter_model = SAM("mobile_sam.pt")
 
 
 class Retina:
-    def __init__(self, src_image: Path, segmenter: str = "yolo") -> None:
+    def __init__(
+        self, src_image: Path, segmenter: Literal["yolo", "sam"] = "yolo"
+    ) -> None:
         self.src_image = src_image
         self.segmenter = segmenter
 
     def generate_som_image(self):
-        """Returns a PIL Image."""
+        """Generate image with numeric labels useful for Set-of-Mark prompting. Returns a PIL Image."""
 
         results, _ = self.do_segment(segmenter=self.segmenter)
         som = self.set_marks(results, font_size=50)
@@ -93,53 +95,54 @@ class Retina:
         return largest_contour_mask
 
     def set_marks(self, detections: list[Results], font_size: int = 20):
+        """Takes in a list of YOLO inference Results but marking will only be done for the first result."""
         print("setting marks...")
         raw_image = Image.open(self.src_image)
         raw_image_draw = ImageDraw.Draw(raw_image)
         font = ImageFont.load_default(size=font_size)
 
-        for current_image_detection in detections:
-            masks = current_image_detection.masks.data
-            for i, mask in enumerate(masks):
-                mask_arr = mask.detach().cpu().numpy() * 255
-                src_mask = (mask_arr).astype("uint8")
+        current_image_detection = detections[0]
+        masks = current_image_detection.masks.data
+        for i, mask in enumerate(masks):
+            mask_arr = mask.detach().cpu().numpy() * 255
+            src_mask = (mask_arr).astype("uint8")
 
-                current_mask = self._keep_largest_contour(src_mask)
+            current_mask = self._keep_largest_contour(src_mask)
 
-                mask_dt = cv2.distanceTransform(current_mask, cv2.DIST_L2, 0)
-                mask_dt = mask_dt[1:-1, 1:-1]
-                max_dist = np.max(mask_dt) * 0.8
-                coords_y, coords_x = np.where(mask_dt >= max_dist)
+            mask_dt = cv2.distanceTransform(current_mask, cv2.DIST_L2, 0)
+            mask_dt = mask_dt[1:-1, 1:-1]
+            max_dist = np.max(mask_dt) * 0.8
+            coords_y, coords_x = np.where(mask_dt >= max_dist)
 
-                # calculate a center within image bounds
-                height, width = mask_dt.shape
-                center_x = coords_x[len(coords_x) // 2] + 2
-                center_y = coords_y[len(coords_y) // 2] - 6
-                center_x = max(0, min(center_x, width - 1))
-                center_y = max(0, min(center_y, height - 1))
+            # calculate a center within image bounds
+            height, width = mask_dt.shape
+            center_x = coords_x[len(coords_x) // 2] + 2
+            center_y = coords_y[len(coords_y) // 2] - 6
+            center_x = max(0, min(center_x, width - 1))
+            center_y = max(0, min(center_y, height - 1))
 
-                # rescale center point coordinates to image size
-                scaled_center = self._rescale_coordinates(
-                    width,
-                    height,
-                    raw_image.width,
-                    raw_image.height,
-                    center_x,
-                    center_y,
-                )
+            # rescale center point coordinates to image size
+            scaled_center = self._rescale_coordinates(
+                width,
+                height,
+                raw_image.width,
+                raw_image.height,
+                center_x,
+                center_y,
+            )
 
-                # add numerical label
-                text = str(i + 1)
-                text_width, text_height = raw_image_draw.textbbox(
-                    (0, 0), text, font=font
-                )[2:]
-                text_background = Image.new(
-                    "RGB", (text_width + 2, text_height + 2), "black"
-                )
-                draw = ImageDraw.Draw(text_background)
-                draw.text((0, 0), text, fill="white", font=font)
+            # add numerical label
+            text = str(i + 1)
+            text_width, text_height = raw_image_draw.textbbox((0, 0), text, font=font)[
+                2:
+            ]
+            text_background = Image.new(
+                "RGB", (text_width + 2, text_height + 2), "black"
+            )
+            draw = ImageDraw.Draw(text_background)
+            draw.text((0, 0), text, fill="white", font=font)
 
-                raw_image.paste(text_background, scaled_center)
+            raw_image.paste(text_background, scaled_center)
 
         return raw_image
 
@@ -163,7 +166,7 @@ class Chat:
 
     def write_context(self, image_path: str, caption: str):
         """Use GPT-4V"""
-        system_prompt = "You are a visual assistant, whose primary function is to accurately describe and analyze images, and respond to related questions. When describing an image, make sure to mention all key items, and spatial relationships. If asked a question about the image, make use of the numerical markings on the key items, and utilize your analysis to give a concise and applicable response. Always strive for accuracy in your descriptions and responses, and use clear and simple language to ensure understanding by users of varying backgrounds."
+        system_prompt = "You are a visual assistant, whose primary function is to accurately describe and analyze images, and respond to related questions. When describing an image, make sure to mention all key items, and spatial relationships. If asked a question about the image, make use of the numeric markings overlayed on the key items, and utilize your analysis to give a concise and applicable response. Always strive for accuracy in your descriptions and responses, and use clear and simple language."
         initial_user_prompt = f"Image caption: {caption}\n\nThink step by step to write a description of the image (with visual grounding) using both the image and its caption."
 
         response = openai_client.chat.completions.create(

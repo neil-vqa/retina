@@ -1,4 +1,4 @@
-import vision
+import retina
 from pathlib import Path
 
 output_dir = Path("./output")
@@ -7,14 +7,14 @@ output_dir.mkdir(parents=True, exist_ok=True)
 
 def go():
     segmenter = "yolo"
-    name = "keiko-fat"
+    name = "couple"
     ext = "jpg"
     img = f"./sample/{name}.{ext}"
     prompt = None
     output_img_filename = f"./output/{name}-{segmenter}"
 
-    retina = vision.Retina(img, segmenter)
-    som = retina.generate_som_image()
+    cur_img = retina.Retina(img, segmenter)
+    som = cur_img.generate_som_image()
     som.save(f"{output_img_filename}-som.{ext}")
     print(f"image saved: {output_img_filename}")
 
