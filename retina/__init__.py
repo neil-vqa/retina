@@ -4,49 +4,38 @@ import cv2
 import os
 from dotenv import load_dotenv
 from PIL import Image, ImageDraw, ImageFont
-from ultralytics import YOLO, SAM
+from ultralytics import YOLO
 from ultralytics.engine.results import Results
 from lavis.models import load_model_and_preprocess
 from pathlib import Path
-from typing import Literal
 from openai import OpenAI
 
 load_dotenv()
+
+output_dir = Path("./output")
+output_dir.mkdir(parents=True, exist_ok=True)
 
 openai_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 yolo_segmenter_model = YOLO("yolov8x-seg.pt")
-sam_segmenter_model = SAM("mobile_sam.pt")
 
 
 class Retina:
-    def __init__(
-        self, src_image: Path, segmenter: Literal["yolo", "sam"] = "yolo"
-    ) -> None:
+    def __init__(self, src_image: Path) -> None:
         self.src_image = src_image
-        self.segmenter = segmenter
 
     def generate_som_image(self):
         """Generate image with numeric labels useful for Set-of-Mark prompting. Returns a PIL Image."""
 
-        results, _ = self.do_segment(segmenter=self.segmenter)
-        som = self.set_marks(results, font_size=50)
+        results, _ = self.do_segment()
+        som = self.set_marks(results[0], font_size=50)
         return som
 
-    def do_segment(
-        self,
-        segmenter: Literal["yolo", "sam"] = "yolo",
-    ):
+    def do_segment(self):
         print("processsing image...")
-        if segmenter == "yolo":
-            results: list[Results] = yolo_segmenter_model.predict(self.src_image)
-            return results, yolo_segmenter_model
-        elif segmenter == "sam":
-            results: list[Results] = sam_segmenter_model.predict(
-                self.src_image, max_det=9
-            )
-            return results, sam_segmenter_model
+        results: list[Results] = yolo_segmenter_model.predict(self.src_image)
+        return results, yolo_segmenter_model
 
     def _rescale_coordinates(
         self, original_width, original_height, new_width, new_height, x, y
@@ -94,15 +83,15 @@ class Retina:
 
         return largest_contour_mask
 
-    def set_marks(self, detections: list[Results], font_size: int = 20):
-        """Takes in a list of YOLO inference Results but marking will only be done for the first result."""
+    def set_marks(self, current_image_detections: Results, font_size: int = 20):
+        """Takes in a YOLO inference Result. Returns a PIL Image."""
+
         print("setting marks...")
         raw_image = Image.open(self.src_image)
         raw_image_draw = ImageDraw.Draw(raw_image)
         font = ImageFont.load_default(size=font_size)
 
-        current_image_detection = detections[0]
-        masks = current_image_detection.masks.data
+        masks = current_image_detections.masks.data
         for i, mask in enumerate(masks):
             mask_arr = mask.detach().cpu().numpy() * 255
             src_mask = (mask_arr).astype("uint8")
@@ -151,12 +140,25 @@ class Retina:
         raw_image = Image.open(self.src_image).convert("RGB")
 
         model, vis_processors, _ = load_model_and_preprocess(
-            name="blip_caption", model_type="large_coco", is_eval=True, device=device
+            name="blip_caption", model_type="base_coco", is_eval=True, device=device
         )
         image = vis_processors["eval"](raw_image).unsqueeze(0).to(device)
         caption = model.generate({"image": image})
 
-        return caption[0]
+        return {"caption": caption[0]}
+
+    def get_masked_image(self, output_filename: str):
+        results, _ = self.do_segment()
+        results[0].plot(
+            labels=False,
+            boxes=False,
+            save=True,
+            filename=f"{output_filename}",
+        )
+
+    def get_image_crops(self, output_filename: str):
+        results, _ = self.do_segment()
+        results[0].save_crop(save_dir=f"./output/crops/{output_filename}")
 
 
 class Chat:
