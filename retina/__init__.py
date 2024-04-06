@@ -28,14 +28,14 @@ class Retina:
     def generate_som_image(self):
         """Generate image with numeric labels useful for Set-of-Mark prompting. Returns a PIL Image."""
 
-        results, _ = self.do_segment()
+        results = self.do_segment()
         som = self.set_marks(results[0], font_size=50)
         return som
 
     def do_segment(self):
         print("processsing image...")
         results: list[Results] = yolo_segmenter_model.predict(self.src_image)
-        return results, yolo_segmenter_model
+        return results
 
     def _rescale_coordinates(
         self, original_width, original_height, new_width, new_height, x, y
@@ -147,18 +147,16 @@ class Retina:
 
         return {"caption": caption[0]}
 
-    def get_masked_image(self, output_filename: str):
-        results, _ = self.do_segment()
-        results[0].plot(
+    def get_masked_image(self, current_image_detections: Results, output_filename: str):
+        current_image_detections.plot(
             labels=False,
             boxes=False,
             save=True,
             filename=f"{output_filename}",
         )
 
-    def get_image_crops(self, output_filename: str):
-        results, _ = self.do_segment()
-        results[0].save_crop(save_dir=f"./output/crops/{output_filename}")
+    def get_image_crops(self, current_image_detections: Results, output_file_id: str):
+        current_image_detections.save_crop(save_dir=f"./output/crops/{output_file_id}")
 
 
 class Chat:

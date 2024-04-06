@@ -21,10 +21,12 @@ def go():
     # print(res["caption"])
 
     # masked output
-    # cur_img.get_masked_image(f"{output_img_filename}-mask.{ext}")
+    # res = cur_img.do_segment()
+    # cur_img.get_masked_image(res[0], f"{output_img_filename}-mask.{ext}")
 
     # for COS
-    # cur_img.get_image_crops(name)
+    # res = cur_img.do_segment()
+    # cur_img.get_image_crops(res[0], name)
 
 
 if __name__ == "__main__":
