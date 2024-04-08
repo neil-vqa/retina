@@ -9,6 +9,7 @@ from ultralytics.engine.results import Results
 from lavis.models import load_model_and_preprocess
 from pathlib import Path
 from openai import OpenAI
+from paddleocr import PaddleOCR
 
 load_dotenv()
 
@@ -19,9 +20,24 @@ openai_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 yolo_segmenter_model = YOLO("yolov8x-seg.pt")
+caption_model, blip_vis_processors, _ = load_model_and_preprocess(
+    name="blip_caption", model_type="base_coco", is_eval=True, device=device
+)
+ocr_model = PaddleOCR(use_angle_cls=True, lang="en", ocr_version="PP-OCRv4")
 
 
 class Retina:
+    """
+    Set of tools for:
+
+    - segmenting an image
+    - generating numeric labels on image
+    - generating image caption
+    - generating image masks
+    - generating object crops in image
+
+    """
+
     def __init__(self, src_image: Path) -> None:
         self.src_image = src_image
 
@@ -138,12 +154,8 @@ class Retina:
     def write_caption(self):
         print("writing image caption...")
         raw_image = Image.open(self.src_image).convert("RGB")
-
-        model, vis_processors, _ = load_model_and_preprocess(
-            name="blip_caption", model_type="base_coco", is_eval=True, device=device
-        )
-        image = vis_processors["eval"](raw_image).unsqueeze(0).to(device)
-        caption = model.generate({"image": image})
+        image = blip_vis_processors["eval"](raw_image).unsqueeze(0).to(device)
+        caption = caption_model.generate({"image": image})
 
         return {"caption": caption[0]}
 
@@ -157,6 +169,29 @@ class Retina:
 
     def get_image_crops(self, current_image_detections: Results, output_file_id: str):
         current_image_detections.save_crop(save_dir=f"./output/crops/{output_file_id}")
+
+
+class RetinaOCR:
+    def __init__(self, src_image: Path) -> None:
+        self.src_image = src_image
+
+    def parse_image(self):
+        """Returns a list of tuples: (word, confidence)"""
+
+        result = ocr_model.ocr(self.src_image, cls=True)
+        text_detections = []
+        for idx in range(len(result)):
+            res = result[idx]
+            for line in res:
+                text_detections.append(line[1])
+        return text_detections
+
+    def get_words(self, results: list[tuple]):
+        words = []
+        for item in results:
+            word, _ = item
+            words.append(word)
+        return words
 
 
 class Chat:

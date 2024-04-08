@@ -17,8 +17,8 @@ def go():
     # print(f"image saved: {output_img_filename}")
 
     # caption
-    # res = cur_img.write_caption()
-    # print(res["caption"])
+    res = cur_img.write_caption()
+    print(res["caption"])
 
     # masked output
     # res = cur_img.do_segment()
@@ -29,5 +29,17 @@ def go():
     # cur_img.get_image_crops(res[0], name)
 
 
+def ocr():
+    name = "ocr_01"
+    ext = "png"
+    img = f"./sample/{name}.{ext}"
+    cur_img = retina.RetinaOCR(img)
+
+    results = cur_img.parse_image()
+    words = cur_img.get_words(results=results)
+    print(words)
+
+
 if __name__ == "__main__":
-    go()
+    # go()
+    ocr()
