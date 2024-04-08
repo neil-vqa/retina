@@ -8,7 +8,6 @@ from ultralytics import YOLO
 from ultralytics.engine.results import Results
 from lavis.models import load_model_and_preprocess
 from pathlib import Path
-from openai import OpenAI
 from paddleocr import PaddleOCR
 
 load_dotenv()
@@ -16,7 +15,6 @@ load_dotenv()
 output_dir = Path("./output")
 output_dir.mkdir(parents=True, exist_ok=True)
 
-openai_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 yolo_segmenter_model = YOLO("yolov8x-seg.pt")
