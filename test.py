@@ -4,7 +4,7 @@ from pathlib import Path
 
 def go():
     segmenter = "yolo"
-    name = "coffee"
+    name = "linggoy"
     ext = "jpg"
     img = f"./sample/{name}.{ext}"
     output_img_filename = f"./output/{name}-{segmenter}"
@@ -17,12 +17,12 @@ def go():
     # print(f"image saved: {output_img_filename}")
 
     # caption
-    res = cur_img.write_caption()
-    print(res["caption"])
+    # res = cur_img.write_caption()
+    # print(res["caption"])
 
     # masked output
-    # res = cur_img.do_segment()
-    # cur_img.get_masked_image(res[0], f"{output_img_filename}-mask.{ext}")
+    res = cur_img.do_segment()
+    cur_img.get_masked_image(res[0], f"{output_img_filename}-mask.{ext}")
 
     # for COS
     # res = cur_img.do_segment()
@@ -41,5 +41,5 @@ def ocr():
 
 
 if __name__ == "__main__":
-    # go()
-    ocr()
+    go()
+    # ocr()

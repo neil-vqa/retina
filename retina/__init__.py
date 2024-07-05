@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 from PIL import Image, ImageDraw, ImageFont
 from ultralytics import YOLO
 from ultralytics.engine.results import Results
-from lavis.models import load_model_and_preprocess
 from pathlib import Path
 from paddleocr import PaddleOCR
 
@@ -18,9 +17,6 @@ output_dir.mkdir(parents=True, exist_ok=True)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 yolo_segmenter_model = YOLO("yolov8x-seg.pt")
-caption_model, blip_vis_processors, _ = load_model_and_preprocess(
-    name="blip_caption", model_type="base_coco", is_eval=True, device=device
-)
 ocr_model = PaddleOCR(use_angle_cls=True, lang="en", ocr_version="PP-OCRv4")
 
 
@@ -152,8 +148,9 @@ class Retina:
     def write_caption(self):
         print("writing image caption...")
         raw_image = Image.open(self.src_image).convert("RGB")
-        image = blip_vis_processors["eval"](raw_image).unsqueeze(0).to(device)
-        caption = caption_model.generate({"image": image})
+        # image = blip_vis_processors["eval"](raw_image).unsqueeze(0).to(device)
+        # caption = caption_model.generate({"image": image})
+        caption = "sample"
 
         return {"caption": caption[0]}
 
